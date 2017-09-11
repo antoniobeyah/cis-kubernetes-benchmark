@@ -17,8 +17,14 @@
 
 title '1.2 Master Node: Scheduler'
 
+scheduler = attribute('scheduler', default: 'kube-scheduler', description: 'the process name of the scheduler')
+scheduler_process = [ scheduler, 'hyperkube scheduler' ]
+                        .lazy
+                        .map { |name| processes(name) }
+                        .find(&:exists?)
+
 only_if do
-  processes('kube-scheduler').exists?
+  scheduler_process.exists?
 end
 
 control 'cis-kubernetes-benchmark-1.2.1' do
@@ -29,7 +35,7 @@ control 'cis-kubernetes-benchmark-1.2.1' do
   tag cis: 'kubernetes:1.2.1'
   tag level: 1
 
-  describe processes('kube-scheduler').commands.to_s do
+  describe scheduler_process.commands.to_s do
     it { should match(/--profiling=false/) }
   end
 end

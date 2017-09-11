@@ -17,8 +17,15 @@
 
 title '1.3 Master Node: Controller Manager'
 
+controller = attribute('controller', default: 'kube-controller-manager', description: 'the process name of the controller')
+
+
+controller_process = [ controller, 'hyperkube controller-manager']
+                         .lazy
+                         .collect { |name| processes(name) }
+                         .find(&:exists?)
 only_if do
-  processes('kube-controller-manager').exists?
+  controller_process.exists?
 end
 
 control 'cis-kubernetes-benchmark-1.3.1' do
@@ -29,7 +36,7 @@ control 'cis-kubernetes-benchmark-1.3.1' do
   tag cis: 'kubernetes:1.3.1'
   tag level: 1
 
-  describe processes('kube-controller-manager').commands.to_s do
+  describe controller_process.commands.to_s do
     it { should match(/--terminated-pod-gc-threshold=/) }
   end
 end
@@ -42,7 +49,7 @@ control 'cis-kubernetes-benchmark-1.3.2' do
   tag cis: 'kubernetes:1.3.2'
   tag level: 1
 
-  describe processes('kube-controller-manager').commands.to_s do
+  describe controller_process.commands.to_s do
     it { should match(/--profiling=false/) }
   end
 end
@@ -55,7 +62,7 @@ control 'cis-kubernetes-benchmark-1.3.3' do
   tag cis: 'kubernetes:1.3.3'
   tag level: 1
 
-  describe processes('kube-controller-manager').commands.to_s do
+  describe controller_process.commands.to_s do
     it { should match(/--use-service-account-credentials=true/) }
   end
 end
@@ -68,7 +75,7 @@ control 'cis-kubernetes-benchmark-1.3.4' do
   tag cis: 'kubernetes:1.3.4'
   tag level: 1
 
-  describe processes('kube-controller-manager').commands.to_s do
+  describe controller_process.commands.to_s do
     it { should match(/--service-account-private-key-file=/) }
   end
 end
@@ -81,7 +88,7 @@ control 'cis-kubernetes-benchmark-1.3.5' do
   tag cis: 'kubernetes:1.3.5'
   tag level: 1
 
-  describe processes('kube-controller-manager').commands.to_s do
+  describe controller_process.commands.to_s do
     it { should match(/--root-ca-file=/) }
   end
 end
@@ -107,7 +114,7 @@ control 'cis-kubernetes-benchmark-1.3.7' do
   tag cis: 'kubernetes:1.3.7'
   tag level: 1
 
-  describe processes('kube-controller-manager').commands.to_s do
+  describe controller_process.commands.to_s do
     it { should match(/--feature-gates=(?:.)*RotateKubeletServerCertificate=true,*(?:.)*/) }
   end
 end

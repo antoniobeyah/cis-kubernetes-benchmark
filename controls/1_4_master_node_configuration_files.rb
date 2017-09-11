@@ -17,6 +17,9 @@
 
 title '1.4 Master Node: Configuration Files'
 
+etcd_regex = attribute('etcd_regex', default: '^/usr(/local)?/bin/etcd')
+etcd_process = processes(Regexp.new(etcd_regex))
+
 control 'cis-kubernetes-benchmark-1.4.1' do
   title 'Ensure that the apiserver file permissions are set to 644 or more restrictive'
   desc "Ensure that the `apiserver` file has permissions of `644` or more restrictive.\n\nRationale: The `apiserver` file controls various parameters that set the behavior of the API server. You should restrict its file permissions to maintain the integrity of the file. The file should be writable by only the administrators on the system."
@@ -200,24 +203,28 @@ control 'cis-kubernetes-benchmark-1.4.11' do
   tag cis: 'kubernetes:1.4.11'
   tag level: 1
 
-  etcd_process = processes(Regexp.new(%r{/usr/bin/etcd}))
   data_dir = ''
 
   catch(:stop) do
     if etcd_process.exists?
+      # attempt to locate data_dir based on command args
       if (data_dir = etcd_process.commands.to_s.scan(/--data-dir=(\S+)/).last)
         data_dir = data_dir.first
         throw :stop
       end
 
-      if (data_dir = file("/proc/#{etcd_process.pids.first}/environ").content.split("\0").select { |i| i[/^ETCD_DATA_DIR/] }.first.split('=').last)
+      # attempt to read proc environment for etcd to get data_dir
+      content = file("/proc/#{etcd_process.pids.first}/environ").content
+      throw :stop if content.empty? || content !~ /ETCD_DATA_DIR/
+
+      if (data_dir = content.split("\0").select { |i| i[/^ETCD_DATA_DIR/] }.first.split('=').last)
         throw :stop
       end
     end
   end
 
-  if !data_dir.empty?
-    describe file(data_dir).mode.to_s do
+  if data_dir != nil && !data_dir.empty?
+    describe file(data_dir).mode.to_s(8) do
       it { should match(/[01234567]00/) }
     end
   else
@@ -235,7 +242,6 @@ control 'cis-kubernetes-benchmark-1.4.12' do
   tag cis: 'kubernetes:1.4.12'
   tag level: 1
 
-  etcd_process = processes(Regexp.new(%r{/usr/bin/etcd}))
   data_dir = ''
 
   catch(:stop) do
@@ -245,14 +251,18 @@ control 'cis-kubernetes-benchmark-1.4.12' do
         throw :stop
       end
 
-      if (data_dir = file("/proc/#{etcd_process.pids.first}/environ").content.split("\0").select { |i| i[/^ETCD_DATA_DIR/] }.first.split('=').last)
+      # attempt to read proc environment for etcd to get data_dir
+      content = file("/proc/#{etcd_process.pids.first}/environ").content
+      throw :stop if content.empty? || content !~ /ETCD_DATA_DIR/
+
+      if (data_dir = content.split("\0").select { |i| i[/^ETCD_DATA_DIR/] }.first.split('=').last)
         throw :stop
       end
     end
   end
 
-  if !data_dir.empty?
-    describe file(data_dir).mode.to_s do
+  if data_dir != nil && !data_dir.empty?
+    describe file(data_dir) do
       it { should be_owned_by 'etcd' }
       it { should be_grouped_into 'etcd' }
     end
