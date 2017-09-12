@@ -36,18 +36,18 @@ class ProcessEnvVar < Inspec.resource(1)
     return @params if defined?(@params)
 
     proc_environ = inspec.file("/proc/#{@process.pids.first}/environ")
-    unless file.file?
+    unless proc_environ.file?
       skip_resource "Can't find environ file for #{@process}"
       return @params = {}
     end
 
     environ_content = proc_environ.content
-    if content.empty? && !file.empty?
+    if environ_content.empty?
       skip_resource "Can't read environ file for #{@process}"
       return @params = {}
     end
 
-    @params = environ_content.split("\0").map { |i| i.split('=') }.to_h
+    @params = environ_content.split("\0").map { |i| i.split('=', 2) }.to_h
   end
 
   def to_s

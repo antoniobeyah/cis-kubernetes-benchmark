@@ -21,7 +21,7 @@ scheduler = attribute('scheduler', default: 'kube-scheduler', description: 'the 
 scheduler_process = [ scheduler, 'hyperkube scheduler' ]
                         .lazy
                         .map { |name| processes(name) }
-                        .find(&:exists?)
+                        .find(&:exists?) || processes(scheduler)
 
 only_if do
   scheduler_process.exists?

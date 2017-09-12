@@ -23,7 +23,7 @@ controller = attribute('controller', default: 'kube-controller-manager', descrip
 controller_process = [ controller, 'hyperkube controller-manager']
                          .lazy
                          .collect { |name| processes(name) }
-                         .find(&:exists?)
+                         .find(&:exists?) || processes(controller)
 only_if do
   controller_process.exists?
 end

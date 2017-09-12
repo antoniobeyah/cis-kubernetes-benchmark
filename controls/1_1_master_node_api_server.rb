@@ -21,7 +21,7 @@ apiserver = attribute('apiserver', default: 'kube-apiserver', description: 'the 
 apiserver_process = [ apiserver,  'hyperkube apiserver' ]
                         .lazy
                         .map { |name| processes(name) }
-                        .find(&:exists?)
+                        .find(&:exists?) || processes(apiserver)
 
 only_if do
   apiserver_process.exists?

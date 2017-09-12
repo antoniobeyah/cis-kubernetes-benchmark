@@ -19,7 +19,8 @@ cis_level = attribute('cis_level', default: '2', description: 'CIS profile level
 
 title '1.5 Master Node: etcd'
 
-etcd_regex = Regexp.new(%r{/usr/bin/etcd})
+etcd_pattern = attribute('etcd_regex', default: '^/usr(/local)?/bin/etcd')
+etcd_regex = Regexp.new(etcd_pattern)
 etcd_process = processes(etcd_regex)
 etcd_env_vars = process_env_var(etcd_regex)
 
@@ -172,7 +173,7 @@ control 'cis-kubernetes-benchmark-1.5.7' do
     end
   end
 
-  if !wal_dir.empty?
+  if wal_dir != nil && !wal_dir.empty?
     describe file(wal_dir).mode.to_s do
       it { should be_owned_by 'etcd' }
       it { should be_grouped_into 'etcd' }
